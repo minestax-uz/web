@@ -31,6 +31,12 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // If there's no response, it's a network error
+    if (!error.response) {
+      console.error("Network error:", error);
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
     // If the error is 401 and we haven't retried yet
@@ -42,29 +48,51 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
         if (!refreshToken) {
           // No refresh token, redirect to login
+          console.log("No refresh token available, redirecting to login");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
           window.location.href = "/login";
           return Promise.reject(error);
         }
+
+        console.log("Attempting to refresh token...");
 
         const response = await axios.post(`${API_URL}/api/auth/refresh`, {
           refreshToken,
         });
 
-        const { accessToken } = response.data.data;
+        // Check if the response has the expected structure
+        // The API returns data in the format { success: true, data: { accessToken: '...' } }
+        if (response.data && response.data.success && response.data.data && response.data.data.accessToken) {
+          const { accessToken } = response.data.data;
+          console.log("Token refresh successful");
 
-        // Store the new access token
-        localStorage.setItem("accessToken", accessToken);
+          // Store the new access token
+          localStorage.setItem("accessToken", accessToken);
 
-        // Update the authorization header
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          // Update the authorization header for the original request
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
-        // Retry the original request
-        return api(originalRequest);
+          // Also update the default headers for future requests
+          api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+
+          // Retry the original request
+          return api(originalRequest);
+        } else {
+          throw new Error("Invalid response format from refresh token endpoint");
+        }
       } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+
         // If refresh fails, redirect to login
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
+
+        // Add a small delay before redirecting to avoid potential redirect loops
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 100);
+
         return Promise.reject(refreshError);
       }
     }
@@ -84,47 +112,33 @@ export const authAPI = {
 
 // Server API
 export const serverAPI = {
-  getStats: () => api.get("/api/server/stats"),
-  getPlayers: (search = "") => api.get("/api/server/players", { params: { search } }),
-};
-
-// Players API
-export const playersAPI = {
-  getPlayers: (page = 1, search = "") => api.get("/api/players", { params: { page, search } }),
-  getPlayer: (username: string) => api.get(`/api/players/${username}`),
+  // Get server stats from Plan plugin
+  getStats: (server: "anarxiya" | "survival" | "boxpvp" = "anarxiya") => api.get(`/api/${server}/statistics/`, { params: { range: 24 } }),
+  getFullStats: (server: "anarxiya" | "survival" | "boxpvp" = "anarxiya") => api.get(`/api/${server}/statistics/server`),
 };
 
 // Statistics API
 export const statisticsAPI = {
   // Anarxiya statistics
   getAnarxiyaServerStats: (range?: number) => api.get("/api/anarxiya/statistics/server", { params: { range } }),
-  getAnarxiyaPlayerStats: (player: string, range?: number) => api.get("/api/anarxiya/statistics/player", { params: { player, range } }),
-  getAnarxiyaLeaderboard: (type: string, limit = 10) => api.get("/api/anarxiya/statistics/leaderboard", { params: { type, limit } }),
-  searchAnarxiyaPlayers: (query: string) => api.get(`/api/anarxiya/statistics/search/${query}`),
-
-  // Anarxiya Plan plugin statistics
-  getAnarxiyaPlanServerStats: () => api.get("/api/anarxiya/statistics/plan/server"),
-  getAnarxiyaPlanPlayerStats: (username: string) => api.get(`/api/anarxiya/statistics/plan/player/${username}`),
+  getAnarxiyaPlayerStats: (player: string, range?: number) => api.get(`/api/anarxiya/statistics/player/${player}`, { params: { range } }),
+  // These endpoints don't exist yet - will be implemented later
+  getAnarxiyaLeaderboard: (_type: string, _limit = 10) => Promise.resolve({ data: { data: [] } }),
+  searchAnarxiyaPlayers: (_query: string) => Promise.resolve({ data: { data: [] } }),
 
   // Survival statistics
   getSurvivalServerStats: (range?: number) => api.get("/api/survival/statistics/server", { params: { range } }),
-  getSurvivalPlayerStats: (player: string, range?: number) => api.get("/api/survival/statistics/player", { params: { player, range } }),
-  getSurvivalLeaderboard: (type: string, limit = 10) => api.get("/api/survival/statistics/leaderboard", { params: { type, limit } }),
-  searchSurvivalPlayers: (query: string) => api.get(`/api/survival/statistics/search/${query}`),
-
-  // Survival Plan plugin statistics
-  getSurvivalPlanServerStats: () => api.get("/api/survival/statistics/plan/server"),
-  getSurvivalPlanPlayerStats: (username: string) => api.get(`/api/survival/statistics/plan/player/${username}`),
+  getSurvivalPlayerStats: (player: string, range?: number) => api.get(`/api/survival/statistics/player/${player}`, { params: { range } }),
+  // These endpoints don't exist yet - will be implemented later
+  getSurvivalLeaderboard: (_type: string, _limit = 10) => Promise.resolve({ data: { data: [] } }),
+  searchSurvivalPlayers: (_query: string) => Promise.resolve({ data: { data: [] } }),
 
   // Boxpvp statistics
   getBoxpvpServerStats: (range?: number) => api.get("/api/boxpvp/statistics/server", { params: { range } }),
-  getBoxpvpPlayerStats: (player: string, range?: number) => api.get("/api/boxpvp/statistics/player", { params: { player, range } }),
-  getBoxpvpLeaderboard: (type: string, limit = 10) => api.get("/api/boxpvp/statistics/leaderboard", { params: { type, limit } }),
-  searchBoxpvpPlayers: (query: string) => api.get(`/api/boxpvp/statistics/search/${query}`),
-
-  // Boxpvp Plan plugin statistics
-  getBoxpvpPlanServerStats: () => api.get("/api/boxpvp/statistics/plan/server"),
-  getBoxpvpPlanPlayerStats: (username: string) => api.get(`/api/boxpvp/statistics/plan/player/${username}`),
+  getBoxpvpPlayerStats: (player: string, range?: number) => api.get(`/api/boxpvp/statistics/player/${player}`, { params: { range } }),
+  // These endpoints don't exist yet - will be implemented later
+  getBoxpvpLeaderboard: (_type: string, _limit = 10) => Promise.resolve({ data: { data: [] } }),
+  searchBoxpvpPlayers: (_query: string) => Promise.resolve({ data: { data: [] } }),
 };
 
 // Bans API
@@ -144,10 +158,4 @@ export const bansAPI = {
   deleteBanProof: (id: number) => api.delete(`/api/bans/proof/${id}`),
   addBanComment: (data: any) => api.post("/api/bans/comment", data),
   deleteBanComment: (id: number) => api.delete(`/api/bans/comment/${id}`),
-};
-
-// Staff API
-export const staffAPI = {
-  getPermissions: (username: string, server: "anarxiya" | "survival" | "boxpvp") => api.get(`/api/${server}/permissions/${username}`),
-  addPermission: (username: string, permission: string, server: "anarxiya" | "survival" | "boxpvp") => api.post(`/api/${server}/permissions/${username}/${permission}`),
 };

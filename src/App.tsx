@@ -5,9 +5,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
 import Dashboard from "./pages/Dashboard";
-import Players from "./pages/Players";
 import Bans from "./pages/Bans";
-import StaffPanel from "./pages/StaffPanel";
 import Statistics from "./pages/Statistics";
 import Profile from "./pages/Profile";
 
@@ -24,14 +22,8 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/players" element={<Players />} />
               <Route path="/bans" element={<Bans />} />
               <Route path="/statistics" element={<Statistics />} />
-
-              {/* Admin/Moderator only routes */}
-              <Route element={<ProtectedRoute requiredRole="moder" />}>
-                <Route path="/staff" element={<StaffPanel />} />
-              </Route>
 
               <Route path="/profile" element={<Profile />} />
             </Route>
