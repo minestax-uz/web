@@ -108,7 +108,7 @@ const Bans = () => {
 
     // Construct the URL to the proof image
     // The file_path already includes the relative path (e.g., "proofs/10689-306806b0cb2.png")
-    const url = apiProof.file_path ? `${apiBaseUrl}/uploads/${apiProof.file_path}` : "https://via.placeholder.com/320x180?text=Image+Not+Available";
+    const url = apiProof.file_path ? `${apiBaseUrl}/${apiProof.file_path}` : "https://via.placeholder.com/320x180?text=Image+Not+Available";
 
     // Determine the type based on file_type, default to image if missing
     const type = apiProof.file_type === "video" ? "video" : "image";
@@ -541,7 +541,11 @@ const Bans = () => {
                       <h3 className="text-lg font-semibold text-gray-300 mb-2">Ban Information</h3>
                       <div className="bg-dark-300 p-4 rounded-md">
                         <div className="flex items-center mb-4">
-                          <img className="h-16 w-16 rounded-md" src={`https://mc-heads.net/avatar/${selectedBan.player_name}/64`} alt={selectedBan.player_name} />
+                          <img
+                            className="h-16 w-16 rounded-md"
+                            src={`https://mc-heads.net/avatar/${selectedBan.player_name}/64`}
+                            alt={selectedBan.player_name.charAt(0).toUpperCase()}
+                          />
                           <div className="ml-4">
                             <div className="text-xl font-medium text-white">{selectedBan.player_name}</div>
                             <div className="text-sm text-gray-400">Banned by: {selectedBan.admin_name}</div>
@@ -607,15 +611,7 @@ const Bans = () => {
                                 <div className="cursor-pointer" onClick={() => handleProofClick(proof)}>
                                   {proof.type === "image" ? (
                                     <div className="relative">
-                                      <img
-                                        src={proof.url}
-                                        alt={`Ban proof`}
-                                        className="w-full h-32 object-cover"
-                                        onError={(e) => {
-                                          // Use placeholder if image fails to load
-                                          e.currentTarget.src = "https://via.placeholder.com/320x180?text=Image+Not+Available";
-                                        }}
-                                      />
+                                      <img src={proof.url} alt={`Ban proof`} className="w-full h-32 object-cover" />
 
                                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all duration-200">
                                         <svg

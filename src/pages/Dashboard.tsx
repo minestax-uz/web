@@ -236,9 +236,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-dark-200 rounded-lg shadow-md p-6 border border-dark-100">
           <h2 className="text-lg font-semibold text-gray-300 mb-2">Players</h2>
-          <p className="text-3xl font-bold text-primary">
-            {stats.onlinePlayers} / {stats.maxPlayers}
-          </p>
+          <p className="text-3xl font-bold text-primary">{stats.onlinePlayers}</p>
         </div>
 
         <div className="bg-dark-200 rounded-lg shadow-md p-6 border border-dark-100">
@@ -253,9 +251,7 @@ const Dashboard = () => {
 
         <div className="bg-dark-200 rounded-lg shadow-md p-6 border border-dark-100">
           <h2 className="text-lg font-semibold text-gray-300 mb-2">Memory</h2>
-          <p className="text-3xl font-bold text-primary">
-            {(stats.memoryUsage / 1024).toFixed(1)} / {(stats.memoryTotal / 1024).toFixed(1)} GB
-          </p>
+          <p className="text-3xl font-bold text-primary">{(stats.memoryUsage / 1024).toFixed(1)} GB</p>
         </div>
       </div>
 
