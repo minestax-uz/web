@@ -1,15 +1,13 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import { createContext, useContext, useState, useEffect } from "react";
 
-// Define the API URL
-const API_URL = 'http://localhost:3000';
+import { jwtDecode } from "jwt-decode";
+import api from "../services/api";
 
 // Define the user interface
 interface User {
   id: string;
   username: string;
-  role: 'admin' | 'moder' | 'user';
+  role: "admin" | "moder" | "user";
 }
 
 // Define the auth context interface
@@ -27,7 +25,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Create the auth provider component
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { children: any }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,20 +33,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if the user is authenticated on component mount
   useEffect(() => {
     const checkAuth = async () => {
-      const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem("accessToken");
       if (accessToken) {
         try {
           // Decode the token to get user information
-          const decoded = jwtDecode<{ id: string; username: string; role: 'admin' | 'moder' | 'user' }>(accessToken);
+          const decoded = jwtDecode<{ id: string; username: string; role: "admin" | "moder" | "user" }>(accessToken);
           setUser({
             id: decoded.id,
             username: decoded.username,
             role: decoded.role,
           });
         } catch (error) {
-          console.error('Invalid token:', error);
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          console.error("Invalid token:", error);
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
         }
       }
       setLoading(false);
@@ -62,29 +60,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+
+      const response = await api.post(`/auth/login`, {
         username,
         password,
       });
 
       const { accessToken, refreshToken, role } = response.data.data;
-      
+
       // Store tokens in local storage
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
       // Decode the token to get user information
-      const decoded = jwtDecode<{ id: string; username: string; role: 'admin' | 'moder' | 'user' }>(accessToken);
-      
+      const decoded = jwtDecode<{ id: string; username: string; role: "admin" | "moder" | "user" }>(accessToken);
+
       setUser({
         id: decoded.id,
         username: decoded.username,
         role: decoded.role,
       });
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Invalid username or password');
+      console.error("Login error:", error);
+      setError("Invalid username or password");
     } finally {
       setLoading(false);
     }
@@ -93,13 +91,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Create the signup function (placeholder for now)
   const signup = async (username: string, password: string) => {
     // This would be implemented if the API supports user registration
-    setError('Signup not implemented in this version');
+    setError("Signup not implemented in this version");
   };
 
   // Create the logout function
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     setUser(null);
   };
 
@@ -125,7 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
